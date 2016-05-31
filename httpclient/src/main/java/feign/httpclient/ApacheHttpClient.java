@@ -22,6 +22,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.GzipCompressingEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
@@ -51,6 +52,8 @@ import feign.Request;
 import feign.Response;
 import feign.Util;
 
+import static feign.Util.CONTENT_ENCODING;
+import static feign.Util.ENCODING_GZIP;
 import static feign.Util.UTF_8;
 
 /**
@@ -144,10 +147,19 @@ public final class ApacheHttpClient implements Client {
         entity = new ByteArrayEntity(request.body());
       }
 
+      if (hasGzipContentEncoding(request)) {
+        entity = new GzipCompressingEntity(entity);
+      }
+
       requestBuilder.setEntity(entity);
     }
 
     return requestBuilder.build();
+  }
+
+  private boolean hasGzipContentEncoding(Request request) {
+    Collection<String> contentEncodingValues = request.headers().get(CONTENT_ENCODING);
+    return contentEncodingValues != null && contentEncodingValues.contains(ENCODING_GZIP);
   }
 
   private ContentType getContentType(Request request) {
